@@ -1,25 +1,21 @@
 import hashlib
 import os
 from flask_restful import Resource
-from flask import request
+from flask import request, abort, current_app, send_from_directory
 from models import db, User, UserSchema, VideoConversionTask, VideoConversionTaskSchema, TaskStatus
 from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
 from extensions import celery
-from celery.result import AsyncResult
 from werkzeug.utils import secure_filename
-task_schema = VideoConversionTaskSchema(many=True)
+
+tasks_schema = VideoConversionTaskSchema(many=True)
+task_schema = VideoConversionTaskSchema()
+
 
 def ensure_directories_exists(directories):
     for directory in directories:
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-def initiate_conversion_with_service(input_path, output_path, conversion_type):
-    task = celery.send_task('tasks.convert_video', args=[input_path, output_path, conversion_type])
-    return {
-        'status': 'Conversion started',
-        'task_id': str(task.id)
-    }
 
 class ViewSignInUser(Resource):
     def post(self):
@@ -45,7 +41,7 @@ class ViewSignInUser(Resource):
         db.session.add(new_user)
         db.session.commit()
 
-        return {"message": "usuario creado exitosamente", 'status': 200}
+        return {"message": "usuario creado exitosamente", "id": new_user.id}, 201
 
 
 class ViewLogin(Resource):
@@ -61,10 +57,13 @@ class ViewLogin(Resource):
         if user is None:
             return "El usuario no existe", 404
 
+        access_token = create_access_token(identity=user.id)
         return {
             "message": "Inicio de sesión exitoso",
+            "token": access_token,
             "id": user.id,
         }, 200
+
 
 class ViewConverter(Resource):
     @jwt_required()
@@ -89,24 +88,25 @@ class ViewConverter(Resource):
         conversion_type = request.form.get('conversion_type')
         input_path = filepath
         output_path = os.path.join(user_output_path, f"converted_{file_basename}")
+
+        task_entry = VideoConversionTask(
+            user_id=get_jwt_identity(),
+            input_path=input_path,
+            output_path=output_path,
+            conversion_type=conversion_type,
+            status=TaskStatus.PENDING
+        )
+        db.session.add(task_entry)
+        db.session.commit()
+        task_id = task_entry.id
+
         try:
-            converter_response = initiate_conversion_with_service(input_path, output_path, conversion_type)
-            task_id = converter_response['task_id']
-
-            task_entry = VideoConversionTask(
-                task_id=task_id,
-                user_id=get_jwt_identity(),
-                input_path=input_path,
-                output_path=output_path,
-                conversion_type=conversion_type,
-                status=TaskStatus.PENDING
-            )
-            db.session.add(task_entry)
-            db.session.commit()
-
-            return {"message": "Conversion started", "task_id": task_id}, 202
-
+            celery.send_task('tasks.convert_video', args=[input_path, output_path, conversion_type, task_id])
+            return {"message": "Conversion started", "task_id": str(task_id)}, 202
         except Exception as e:
+            task_entry.status = TaskStatus.FAILURE
+            task_entry.error_message = str(e)
+            db.session.commit()
             return {"error": str(e)}, 500
 
     @jwt_required()
@@ -126,37 +126,25 @@ class ViewConverter(Resource):
             tasks_query = tasks_query.limit(int(max_results))
 
         tasks = tasks_query.all()
-        return {"tasks": task_schema.dump(tasks)}, 200
+        return {"tasks": tasks_schema.dump(tasks)}, 200
 
 
 class ViewConverterStatus(Resource):
     @jwt_required()
     def get(self, task_id):
-        task = AsyncResult(task_id, app=celery)
-        response = {
-            'state': task.state
-        }
+        task = VideoConversionTask.query.filter_by(id=task_id).first()
+        if not task:
+            return {"error": "Task not found"}, 404
 
-        if task.state == 'SUCCESS':
-            response['result'] = str(task.result)
-        elif task.state == 'FAILURE':
-            response['error_message'] = str(task.result)
+        if task.user_id != get_jwt_identity():
+            return {"error": "Not authorized to view this task"}, 403
 
-        task_entry = VideoConversionTask.query.filter_by(task_id=task_id).first()
-        if not task_entry:
-            abort(404, description="Task not found")
-
-        task_entry.status = task.state
-        if 'error_message' in response:
-            task_entry.error_message = response['error_message']
-
-        db.session.commit()
-        return response
+        return {"task": task_schema.dump(task)}, 200
 
     @jwt_required()
     def delete(self, task_id):
         try:
-            task = VideoConversionTask.query.filter_by(task_id=task_id).first()
+            task = VideoConversionTask.query.filter_by(id=task_id).first()
             if not task:
                 return {"error": "Task not found"}, 404
 
@@ -179,7 +167,7 @@ class ViewFileDownload(Resource):
             return {'error': 'Task id is required'}, 400
 
         try:
-            task = VideoConversionTask.query.filter_by(task_id=task_id).first()
+            task = VideoConversionTask.query.filter_by(id=task_id).first()
             if not task:
                 return {"error": "Task not found"}, 404
 

@@ -20,6 +20,7 @@ class UserSchema(SQLAlchemyAutoSchema):
         include_relationships = True
         load_instance = True
 
+
 class TaskStatus(enum.Enum):
     PENDING = "PENDING"
     STARTED = "STARTED"
@@ -29,7 +30,7 @@ class TaskStatus(enum.Enum):
 
 class VideoConversionTask(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    task_id = db.Column(db.String(255), unique=True, nullable=False)
+    broker_task_id = db.Column(db.String(255), unique=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     input_path = db.Column(db.String(255), nullable=False)
     output_path = db.Column(db.String(255), nullable=False)
@@ -46,7 +47,7 @@ class VideoConversionTaskSchema(SQLAlchemyAutoSchema):
         model = VideoConversionTask
         include_relationships = True
         load_instance = True
-        fields = ("task_id", "conversion_type", "status")
+        fields = ("id", "conversion_type", "status")
 
     def get_status_as_string(self, obj):
         return obj.status.value
