@@ -65,6 +65,34 @@ POSTMAN documentation: https://documenter.getpostman.com/view/30633619/2s9YRB1Wy
     docker-compose rm -v
     ```
 
+### run glances 
+- **download glances image:**
+    ```bash
+	docker pull nicolargo/glances:latest
+    ```
+
+
+- **run glances container:**
+    ```bash
+   docker run --rm -v /var/run/docker.sock:/var/run/docker.sock:ro --pid host --network host -it docker.io/nicolargo/glances
+    ```
+   
+### Install k6 
+
+   - **tutorial + installer for different OS:** 
+        https://k6.io/docs/es/empezando/instalacion/
+
+   - **windows installer:**
+        https://dl.k6.io/msi/k6-latest-amd64.msi
+
+
+  - **run k6 command:**
+    ```bash
+    k6 run scriptVideoConverter.js --out json=VideoConverter.json --out csv=VideoConverter.csv --log-output=file=VideoConverter.log
+    ```
+ 
+
+
 ### API
 
 The API is exposed on port `5000` by default.
