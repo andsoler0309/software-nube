@@ -17,8 +17,9 @@ POSTMAN documentation: https://documenter.getpostman.com/view/30633619/2s9YRB1Wy
 1. **Clone the Repository:**
 
    ```bash
-   git clone https://github.com/yourusername/yourprojectname.git
-   cd yourprojectname
+   git clone git@github.com:leinaro/MISW-4204-2023-15-video-converter.git
+
+   cd MISW-4204-2023-15-video-converter
    ```
 
 2. **Build the Images:**
