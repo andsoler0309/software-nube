@@ -20,7 +20,9 @@ def convert_video(self, input_path, output_path, conversion_type, task_id):
         session.commit()
 
         if cmd:
-            os.system(cmd)
+            result = os.system(cmd)
+            if result != 0:
+                raise Exception(f"ffmpeg command failed with exit code {result}")
             self.update_state(state=states.SUCCESS, meta={'status': f'File saved to {output_path}'})
             task.status = db.TaskStatus.SUCCESS
             session.commit()

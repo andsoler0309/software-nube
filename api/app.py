@@ -16,8 +16,8 @@ app.config["PROPAGATE_EXCEPTIONS"] = True
 app.config["JWT_SECRET_KEY"] = "frase-secreta"
 app.config['CELERY_BROKER_URL'] = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
 app.config['CELERY_RESULT_BACKEND'] = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
-app.config['UPLOAD_FOLDER'] = '/app/videos/uploaded'
-app.config['CONVERTED_FOLDER'] = '/app/videos/converted'
+app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER', '/app/videos/uploaded')
+app.config['CONVERTED_FOLDER'] = os.environ.get('CONVERTED_FOLDER', '/app/videos/converted')
 
 celery.conf.update(app.config)
 celery.main = app.name
