@@ -21,8 +21,13 @@ def convert_video(self, input_path, output_path, conversion_type, task_id):
 
         if cmd:
             result = os.system(cmd)
-            if result != 0:
+            if result != 0 and result != 256:
+                self.update_state(state=states.FAILURE, meta={'status': f'ffmpeg command failed with exit code {result}'})
+                task.status = db.TaskStatus.FAILURE
+                task.error_message = f'ffmpeg command failed with exit code {result}'
+                session.commit()
                 raise Exception(f"ffmpeg command failed with exit code {result}")
+
             self.update_state(state=states.SUCCESS, meta={'status': f'File saved to {output_path}'})
             task.status = db.TaskStatus.SUCCESS
             session.commit()
