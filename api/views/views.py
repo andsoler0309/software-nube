@@ -151,6 +151,8 @@ class ViewConverterStatus(Resource):
             if task.user_id != get_jwt_identity():
                 return {"error": "Not authorized to delete this task"}, 403
 
+            os.remove(task.input_path)
+            os.remove(task.output_path + '.' + task.conversion_type)
             db.session.delete(task)
             db.session.commit()
             return {}, 204
