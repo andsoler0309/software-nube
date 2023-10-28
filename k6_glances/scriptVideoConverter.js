@@ -5,14 +5,16 @@ import { htmlReport } from "https://raw.githubusercontent.com/benc-uk/k6-reporte
 import { textSummary } from "https://jslib.k6.io/k6-summary/0.0.1/index.js";
 
 
+const ipServer = '34.42.209.189'
+
 /*Escenarios de prueba*/
 export const options = {
     scenarios: {
       
       shared_iter_scenario: {
         executor: "shared-iterations",
-        vus: 5,
-        iterations: 20,
+        vus: 1,
+        iterations: 2,
         startTime: "0s",
       }
       
@@ -29,13 +31,13 @@ export const options = {
     },
   };
 
-  const videofile = open('C:/Users/jesus/Documents/maestria/08_cloud/MISW-4204-2023-15-video-converter/IMG_4522.mov','b');
+  const videofile = open('../IMG_4522.MOV','b');
 
   /* Request */
 export default function () {
 
   //LOGIN
-  const loginUrl = 'http://localhost:5000/api/auth/login';
+  const loginUrl = `http://${ipServer}/api/auth/login`;
   const loginPayload = JSON.stringify({
     username: "test",
     password: "1234",
@@ -54,7 +56,7 @@ export default function () {
   const fd = new FormData();
   fd.append('conversion_type', 'mp4');
   fd.append('file',  http.file(videofile));
-  const res = http.post('http://localhost:5000/api/tasks', fd.body(), {
+  const res = http.post(`http://${ipServer}/api/tasks`, fd.body(), {
     headers: { 'Content-Type': 'multipart/form-data; boundary=' + fd.boundary ,'Authorization': "Bearer "+loginJson.token },
   });
 
