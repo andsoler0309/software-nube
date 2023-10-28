@@ -4,7 +4,7 @@ from utils import get_conversion_command
 from celery_worker import celery_app
 from celery import states
 import db
-
+import time
 
 @celery_app.task(bind=True)
 def convert_video(self, input_path, output_path, conversion_type, task_id):
@@ -20,7 +20,10 @@ def convert_video(self, input_path, output_path, conversion_type, task_id):
         session.commit()
 
         if cmd:
+            time_start = time.time()
             result = os.system(cmd)
+            time_end = time.time()
+            task.time_taken = round(time_end - time_start, 2)
             if result != 0 and result != 256:
                 self.update_state(state=states.FAILURE, meta={'status': f'ffmpeg command failed with exit code {result}'})
                 task.status = db.TaskStatus.FAILURE

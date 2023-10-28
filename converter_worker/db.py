@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateTime, Enum, Text
+from sqlalchemy import create_engine, Column, Integer, Float, String, ForeignKey, DateTime, Enum, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Mapped, mapped_column, scoped_session
 from datetime import datetime
@@ -31,7 +31,7 @@ class VideoConversionTask(Base):
     status = Column(Enum(TaskStatus), default=TaskStatus.PENDING)
     timestamp = Column(DateTime, default=datetime.utcnow)
     error_message = Column(Text)
-
+    time_taken = Column(Float)
 
 class User(Base):
     __tablename__ = "user"

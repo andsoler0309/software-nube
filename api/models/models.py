@@ -38,6 +38,7 @@ class VideoConversionTask(db.Model):
     status = db.Column(db.Enum(TaskStatus), default=TaskStatus.PENDING)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     error_message = db.Column(db.Text)
+    time_taken = db.Column(db.Float)
 
 
 class VideoConversionTaskSchema(SQLAlchemyAutoSchema):
