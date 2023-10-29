@@ -1,3 +1,7 @@
+
+## week 3 configuration
+[nfs readme](https://github.com/leinaro/MISW-4204-2023-15-video-converter/tree/main/nfs-configuration)
+
 # Repository Overview
 
 POSTMAN documentation: https://documenter.getpostman.com/view/30633619/2s9YRB1WyD
