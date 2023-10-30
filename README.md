@@ -1,5 +1,7 @@
+# Documentación entregas
+- [Wiki](https://github.com/leinaro/MISW-4204-2023-15-video-converter/wiki)
 
-## Week 3 - GCP Configuration 
+# Week 3 - GCP Configuration 
 In the next link you'll found the instructions for setting up the gcp intances [nfs readme](https://github.com/leinaro/MISW-4204-2023-15-video-converter/tree/main/nfs-configuration)
 
 # Repository Overview
