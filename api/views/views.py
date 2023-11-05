@@ -1,20 +1,20 @@
 import hashlib
 import os
+import datetime
 from flask_restful import Resource
 from flask import request, abort, current_app, send_from_directory
 from models import db, User, UserSchema, VideoConversionTask, VideoConversionTaskSchema, TaskStatus
 from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
 from extensions import celery
 from werkzeug.utils import secure_filename
+from google.cloud import storage
 
 tasks_schema = VideoConversionTaskSchema(many=True)
 task_schema = VideoConversionTaskSchema()
 
-
-def ensure_directories_exists(directories):
-    for directory in directories:
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+GCS_BUCKET_NAME = 'video-converter-1'
+storage_client = storage.Client()
+bucket = storage_client.bucket(GCS_BUCKET_NAME)
 
 
 class ViewSignInUser(Resource):
@@ -78,16 +78,16 @@ class ViewConverter(Resource):
         filename = secure_filename(file.filename)
         file_basename, file_extension = os.path.splitext(filename)
 
-        user_upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], str(get_jwt_identity()))
-        user_output_path = os.path.join(current_app.config['CONVERTED_FOLDER'], str(get_jwt_identity()))
-        ensure_directories_exists([user_upload_path, user_output_path])
-
-        filepath = os.path.join(user_upload_path, filename)
-        file.save(filepath)
-
+        user_id_str = str(get_jwt_identity())
         conversion_type = request.form.get('conversion_type')
-        input_path = filepath
-        output_path = os.path.join(user_output_path, f"converted_{file_basename}")
+        gcs_upload_path = f'uploads/{user_id_str}/{filename}'
+        gcs_output_path = f'converted/{user_id_str}/converted_{file_basename}.{conversion_type}'
+
+        upload_blob = bucket.blob(gcs_upload_path)
+        upload_blob.upload_from_string(file.read(), content_type=file.content_type)
+
+        input_path = gcs_upload_path
+        output_path = gcs_output_path
 
         task_entry = VideoConversionTask(
             user_id=get_jwt_identity(),
@@ -101,7 +101,7 @@ class ViewConverter(Resource):
         task_id = task_entry.id
 
         try:
-            celery.send_task('tasks.convert_video', args=[input_path, output_path, conversion_type, task_id])
+            celery.send_task('tasks.convert_video', args=[input_path, output_path, conversion_type, file_extension, task_id])
             return {"message": "Conversion started", "task_id": str(task_id)}, 202
         except Exception as e:
             task_entry.status = TaskStatus.FAILURE
@@ -151,8 +151,8 @@ class ViewConverterStatus(Resource):
             if task.user_id != get_jwt_identity():
                 return {"error": "Not authorized to delete this task"}, 403
 
-            os.remove(task.input_path)
-            os.remove(task.output_path + '.' + task.conversion_type)
+            bucket.blob(task.input_path).delete()
+            bucket.blob(task.output_path).delete()
             db.session.delete(task)
             db.session.commit()
             return {}, 204
@@ -179,8 +179,18 @@ class ViewFileDownload(Resource):
             if task.status != TaskStatus.SUCCESS:
                 return {"error": "File is not ready for download"}, 400
 
-            filepath = task.output_path + '.' + task.conversion_type
-            directory, filename = os.path.split(filepath)
-            return send_from_directory(directory, filename, as_attachment=True)
-        except FileNotFoundError:
+            blob_name = task.output_path
+            blob = bucket.blob(blob_name)
+            blob_uri = blob.generate_signed_url(
+                version='v4',
+                expiration=datetime.timedelta(minutes=2), # 5 minutes
+                method='GET'
+            )
+            return {'download_url': blob_uri}
+            # filepath = task.output_path + '.' + task.conversion_type
+            # directory, filename = os.path.split(filepath)
+            # return send_from_directory(directory, filename, as_attachment=True)
+        except google.cloud.exceptions.NotFound:
             return {'error': 'file not found'}, 404
+        except Exception as e:
+            return {"error": str(e)}, 500
