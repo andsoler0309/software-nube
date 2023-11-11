@@ -4,6 +4,10 @@
 # Week 3 - GCP Configuration 
 In the next link you'll found the instructions for setting up the gcp intances [nfs readme](https://github.com/leinaro/MISW-4204-2023-15-video-converter/tree/main/nfs-configuration)
 
+# Week 5 - Auto Scaling 
+
+In the next link you'll found the instructions for setting up the load balancer and instance group [Auto Scaling](https://github.com/leinaro/MISW-4204-2023-15-video-converter/blob/main/buckets-configuration/README.md)
+
 # Repository Overview
 
 POSTMAN documentation: https://documenter.getpostman.com/view/30633619/2s9YRB1WyD
