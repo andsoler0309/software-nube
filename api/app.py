@@ -6,7 +6,6 @@ from flask_restful import Api
 from views import *
 from models import db
 from flask_jwt_extended import JWTManager
-from extensions import celery
 from sqlalchemy.exc import OperationalError
 
 app = Flask(__name__)
@@ -14,13 +13,9 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "postgres
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["PROPAGATE_EXCEPTIONS"] = True
 app.config["JWT_SECRET_KEY"] = "frase-secreta"
-app.config['CELERY_BROKER_URL'] = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
-app.config['CELERY_RESULT_BACKEND'] = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
 app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER', '/app/videos/uploaded')
 app.config['CONVERTED_FOLDER'] = os.environ.get('CONVERTED_FOLDER', '/app/videos/converted')
 
-celery.conf.update(app.config)
-celery.main = app.name
 
 app_context = app.app_context()
 app_context.push()

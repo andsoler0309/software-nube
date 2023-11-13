@@ -7,14 +7,20 @@ from models import db, User, UserSchema, VideoConversionTask, VideoConversionTas
 from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
 from extensions import celery
 from werkzeug.utils import secure_filename
-from google.cloud import storage
+from google.cloud import storage, pubsub_v1
+import json
 
 tasks_schema = VideoConversionTaskSchema(many=True)
 task_schema = VideoConversionTaskSchema()
 
+# cloud storage config
 GCS_BUCKET_NAME = 'video-converter-1'
 storage_client = storage.Client()
 bucket = storage_client.bucket(GCS_BUCKET_NAME)
+
+# pubsub config
+publisher = pubsub_v1.PublisherClient()
+topic_path = publisher.topic_path('video-convertor-402921', 'convert-video')
 
 
 class ViewSignInUser(Resource):
@@ -101,7 +107,15 @@ class ViewConverter(Resource):
         task_id = task_entry.id
 
         try:
-            celery.send_task('tasks.convert_video', args=[input_path, output_path, conversion_type, file_extension, task_id])
+            data = json.dumps({
+                'input_path': input_path,
+                'output_path': output_path,
+                'conversion_type': conversion_type,
+                'file_extension': file_extension,
+                'task_id': task_id
+            }).encode('utf-8')
+            future = publisher.publish(topic_path, data=data)
+            future.result()
             return {"message": "Conversion started", "task_id": str(task_id)}, 202
         except Exception as e:
             task_entry.status = TaskStatus.FAILURE
@@ -183,7 +197,7 @@ class ViewFileDownload(Resource):
             blob = bucket.blob(blob_name)
             blob_uri = blob.generate_signed_url(
                 version='v4',
-                expiration=datetime.timedelta(minutes=2), # 5 minutes
+                expiration=datetime.timedelta(minutes=5), # 5 minutes
                 method='GET'
             )
             return {'download_url': blob_uri}
