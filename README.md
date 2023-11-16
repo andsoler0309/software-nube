@@ -8,6 +8,10 @@ In the next link you'll found the instructions for setting up the gcp intances [
 
 In the next link you'll found the instructions for setting up the load balancer and instance group [Auto Scaling](https://github.com/leinaro/MISW-4204-2023-15-video-converter/blob/main/buckets-configuration/README.md)
 
+# Week 6 - Pub/Sub
+
+In the next link you'll found the instructions for setting up the pub/sub [Pub/Sub](https://github.com/leinaro/MISW-4204-2023-15-video-converter/blob/main/pub-sub-configuration/README.md)
+
 # Repository Overview
 
 POSTMAN documentation: https://documenter.getpostman.com/view/30633619/2s9YRB1WyD

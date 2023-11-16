@@ -15,10 +15,12 @@ Este documento proporciona una guía paso a paso para configurar y utilizar Goog
 1. **Crear un Tópico:**
    - Ve a la sección Pub/Sub en tu consola de GCP.
    - Crea un nuevo tópico proporcionando un nombre único.
+   - en este caso se uso convert-video
 
 2. **Crear una Suscripción:**
    - Una vez creado el tópico, crea una suscripción asociada a ese tópico.
    - Elige el tipo de suscripción según tus necesidades (pull o push).
+   - en este caso se uso video-sub
 
 ## Paso 3: Configuración de Autenticación
 
@@ -35,6 +37,9 @@ Este documento proporciona una guía paso a paso para configurar y utilizar Goog
 2. **Instalar las Dependencias de GCP:**
    - Asegúrate de que tu proyecto tenga las bibliotecas necesarias instaladas, como `google-cloud-pubsub`.
    - Puedes instalarlas usando pip: `pip install google-cloud-pubsub`.
+
+#### - En el caso del proyecto actual se esta usando Docker, por lo que se debe agregar la dependencia en el archivo requirements.txt y luego construir la imagen. 
+#### - En el caso del archivo .json se agrego en los servidores y se agrego la variable de entorno en el archivo Dockerfile.
 
 ## Paso 5: Implementación en el Código
 
