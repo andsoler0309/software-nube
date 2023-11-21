@@ -14,4 +14,4 @@ ENV GOOGLE_APPLICATION_CREDENTIALS /secrets/service-account-file.json
 
 EXPOSE 5000
 
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "app:app"]
+CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 app:app

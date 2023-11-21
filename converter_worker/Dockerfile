@@ -15,5 +15,7 @@ COPY video-convertor-402921-0a56b850480b.json /secrets/service-account-file.json
 
 ENV GOOGLE_APPLICATION_CREDENTIALS /secrets/service-account-file.json
 
-CMD ["python", "tasks.py"]
+EXPOSE 8080
+
+CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 tasks:app
 

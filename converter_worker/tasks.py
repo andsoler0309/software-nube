@@ -1,3 +1,4 @@
+import base64
 import os
 import json
 from utils import get_conversion_command
@@ -5,8 +6,10 @@ import db
 import time
 import tempfile
 import subprocess
-from google.cloud import storage, pubsub_v1
+from google.cloud import storage
+from flask import Flask, request
 
+app = Flask(__name__)
 GCS_BUCKET_NAME = 'video-converter-1'
 storage_client = storage.Client()
 bucket = storage_client.bucket(GCS_BUCKET_NAME)
@@ -65,24 +68,42 @@ def convert_video(data):
         os.remove(input_temp_filename)
         os.remove(output_temp_filename)
 
-def callback(message):
-    data = json.loads(message.data.decode('utf-8'))
-    result = convert_video(data)
-    if result.get('error'):
-        message.nack()
-    else:
-        message.ack()
 
-def main():
-    subscriber = pubsub_v1.SubscriberClient()
-    subscription_path = subscriber.subscription_path('video-convertor-402921', 'video-sub')
-    streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback)
-    with subscriber:
-        try:
-            streaming_pull_future.result()
-        except KeyboardInterrupt:
-            streaming_pull_future.cancel()
-            streaming_pull_future.result()
+# def callback(message):
+#     data = json.loads(message.data.decode('utf-8'))
+#     result = convert_video(data)
+#     if result.get('error'):
+#         message.nack()
+#     else:
+#         message.ack()
+#
+#
+# def main():
+#     subscriber = pubsub_v1.SubscriberClient()
+#     subscription_path = subscriber.subscription_path('video-convertor-402921', 'video-sub')
+#     streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback)
+#     with subscriber:
+#         try:
+#             streaming_pull_future.result()
+#         except KeyboardInterrupt:
+#             streaming_pull_future.cancel()
+#             streaming_pull_future.result()
+
+
+@app.route('/convert', methods=['POST'])
+def pubsub_handler():
+    envelope = request.get_json()
+    message = envelope['message']
+    data = json.loads(base64.b64decode(message['data']).decode('utf-8'))
+
+    result = convert_video(data)
+    return result
+
+
+@app.route('/')
+def get_health():
+    return {'status': 'ok'}
+
 
 if __name__ == '__main__':
-    main()
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
