@@ -12,6 +12,10 @@ In the next link you'll found the instructions for setting up the load balancer 
 
 In the next link you'll found the instructions for setting up the pub/sub [Pub/Sub](https://github.com/leinaro/MISW-4204-2023-15-video-converter/blob/main/pub-sub-configuration/README.md)
 
+## Week 8 - Cloud Run
+
+In the next link you'll found the instructions for setting up the cloud run [Cloud Run](https://github.com/leinaro/MISW-4204-2023-15-video-converter/blob/main/cloud-run/README.md)
+
 # Repository Overview
 
 POSTMAN documentation: https://documenter.getpostman.com/view/30633619/2s9YRB1WyD
